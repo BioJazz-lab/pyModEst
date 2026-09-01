@@ -138,36 +138,29 @@ class SimulationModel:
             raise ModelError(f"model '{self.spec.id}': integrator setup failed ({exc})") from exc
 
     def _target_for(self, key: str) -> str:
-        """Map a user-facing name to the roadrunner selection used to set it.
-
-        Species are set through their initial value ``init(X)`` so the change
-        survives the integrator's re-initialisation.
-        """
-        if key in self._target_cache:
-            return self._target_cache[key]
-        target = key
-        if key in self._species and not key.startswith("init("):
-            candidate = f"init({key})"
+        """The roadrunner selection used to write ``key`` (resolved once, cached)."""
+        if key not in self._target_cache:
+            target = key
             try:
-                self.rr[candidate]
-                target = candidate
+                self.rr[key]
             except Exception:
-                target = key
-        self._target_cache[key] = target
-        return target
+                target = f"init({key})" if key in self._species else key
+            self._target_cache[key] = target
+        return self._target_cache[key]
 
     def _apply(self, assignments: Mapping[str, float], what: str) -> None:
-        """Apply assignments, initial values first.
+        """Write parameter and species values onto the model.
 
-        Order matters: roadrunner re-initialises the model when an ``init(...)``
-        value changes, which resets global parameters to their SBML defaults.
-        Setting every initial value before any parameter keeps both.
+        Species are set through their *current* value, not ``init(X)``. The
+        resulting trajectories are identical because the model has just been
+        reset to its SBML defaults, so the current value is the starting state
+        -- but writing an initial value makes roadrunner re-initialise the whole
+        model, which costs tens of milliseconds and would dominate a fit that
+        varies the starting conditions between datasets.
         """
-        resolved = [(self._target_for(k), k, float(v)) for k, v in assignments.items()]
-        resolved.sort(key=lambda item: 0 if item[0].startswith("init(") else 1)
-        for target, key, value in resolved:
+        for key, value in assignments.items():
             try:
-                self.rr[target] = value
+                self.rr[self._target_for(key)] = float(value)
             except Exception as exc:
                 raise ModelError(
                     f"model '{self.spec.id}': cannot set {what} '{key}' ({exc})"
@@ -257,8 +250,9 @@ class SimulationModel:
                     break
                 except Exception:  # pragma: no cover - defensive
                     continue
-        # Later mappings win; everything is applied in one pass so that initial
-        # values are always written before parameters (see _apply).
+        # Later mappings win. resetAll() first returns every parameter and
+        # species to its SBML default, so values left over from a previous
+        # dataset's conditions cannot leak into this one.
         merged: Dict[str, float] = {}
         for mapping in (parameters, conditions, initial_conditions):
             for key, value in mapping.items():

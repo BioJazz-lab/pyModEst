@@ -34,8 +34,12 @@ def test_parameters_change_the_trajectory(toy_model):
 
 
 def test_initial_conditions_are_applied_and_survive_parameter_writes(toy_model):
-    """Regression: roadrunner re-initialises when init(...) is written, which
-    silently reverted parameters if they were set first."""
+    """Regression: parameters and starting values must both take effect.
+
+    Writing an ``init(...)`` value makes roadrunner re-initialise and drop the
+    global parameters, which silently reverted every parameter write. Species
+    are now set by current value after a reset instead; this guards the
+    behaviour either way."""
     out = toy_model.simulate(
         TIMES, parameters={"Vmax1": 3.0}, initial_conditions={"S": 10.0, "A": 0.4}
     )
@@ -172,3 +176,36 @@ def test_negative_sigma_is_rejected():
 def test_select_skips_variables_the_dataset_does_not_have(synthetic_csv):
     data = load_dataset(DatasetSpec(id="exp", model="toy", file=synthetic_csv))
     assert [m.variable for m in data.select(["A", "ghost"])] == ["A"]
+
+
+def test_conditions_do_not_leak_between_simulations(toy_model):
+    """Each call starts from the SBML defaults, so nothing carries over.
+
+    Datasets in one study routinely differ in their starting conditions, and
+    the model instance is shared between them. Alternating two conditions must
+    give the same answers as running each on its own.
+    """
+    hi = dict(parameters=TRUE_PARAMETERS, initial_conditions={"S": 10.0})
+    lo = dict(parameters=TRUE_PARAMETERS, initial_conditions={"S": 2.0})
+    alone_hi = toy_model.simulate(TIMES, use_cache=False, **hi)["A"]
+    alone_lo = toy_model.simulate(TIMES, use_cache=False, **lo)["A"]
+    assert not np.allclose(alone_hi, alone_lo)
+    for _ in range(3):
+        assert np.allclose(toy_model.simulate(TIMES, use_cache=False, **hi)["A"], alone_hi)
+        assert np.allclose(toy_model.simulate(TIMES, use_cache=False, **lo)["A"], alone_lo)
+
+
+def test_a_condition_set_once_does_not_persist(toy_model):
+    """A parameter set for one dataset must not survive into the next."""
+    with_change = toy_model.simulate(
+        TIMES, parameters={**TRUE_PARAMETERS, "k3": 2.5},
+        initial_conditions={"S": 10.0}, use_cache=False,
+    )["B"]
+    without = toy_model.simulate(
+        TIMES, parameters=TRUE_PARAMETERS, initial_conditions={"S": 10.0}, use_cache=False,
+    )["B"]
+    baseline = toy_model.simulate(
+        TIMES, parameters=TRUE_PARAMETERS, initial_conditions={"S": 10.0}, use_cache=False,
+    )["B"]
+    assert not np.allclose(with_change, without)
+    assert np.allclose(without, baseline)
