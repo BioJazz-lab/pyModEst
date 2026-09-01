@@ -1,0 +1,93 @@
+name: publish
+
+# Publishing to PyPI happens when a GitHub Release is published, so cutting a
+# release is the single deliberate action that ships a version.
+#
+# Authentication is Trusted Publishing (OIDC): GitHub proves the workflow's
+# identity to PyPI directly, so there is no API token stored anywhere. It has
+# to be configured once on PyPI — see RELEASING.md.
+#
+# workflow_dispatch publishes to TestPyPI instead, for rehearsal.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        type: choice
+        default: testpypi
+        options: [testpypi, pypi]
+
+jobs:
+  build:
+    name: build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+
+      # A release tagged v0.2.0 must contain version = "0.2.0". Without this
+      # check a mismatch either uploads the wrong version or fails confusingly
+      # at the very last step — and a bad PyPI version can never be reused.
+      - name: Tag must match the package version
+        if: github.event_name == 'release'
+        run: |
+          set -euo pipefail
+          version=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag=$tag  pyproject version=$version"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::release tag '$GITHUB_REF_NAME' does not match pyproject version '$version'"
+            exit 1
+          fi
+
+      - run: uv sync --locked
+      - run: uv run pytest -q            # never ship a red build
+      - run: uv build
+      - run: uvx twine check dist/*
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  testpypi:
+    name: publish to TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/pymodest
+    permissions:
+      id-token: write                    # required for Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  pypi:
+    name: publish to PyPI
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi                         # add required reviewers here to gate releases
+      url: https://pypi.org/p/pymodest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

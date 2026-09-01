@@ -25,17 +25,18 @@ strains, or different experimental conditions, are described by related models.
 
 ## Documentation
 
-Full reference in [`docs/`](docs/):
+Full reference in [`docs/`](https://github.com/BioJazz-Lab/pyModEst/tree/main/docs):
 
 | | |
 | --- | --- |
-| [Concepts](docs/concepts.md) | what module-wise fitting is, when it helps, how it fails |
-| [Configuration](docs/configuration.md) | the complete TOML reference |
-| [Capabilities](docs/capabilities.md) | what the package does, each pinned by a test |
-| [Optimizers](docs/optimizers.md) | the five backends, choosing one, adding one |
-| [Python API](docs/api.md) | using pyModEst as a library |
-| [Troubleshooting](docs/troubleshooting.md) | what goes wrong and what it means |
-| [Examples](docs/examples/) | runnable scripts behind the documented output |
+| [Concepts](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/concepts.md) | what module-wise fitting is, when it helps, how it fails |
+| [Configuration](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/configuration.md) | the complete TOML reference |
+| [Capabilities](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/capabilities.md) | what the package does, each pinned by a test |
+| [Optimizers](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/optimizers.md) | the five backends, choosing one, adding one |
+| [Python API](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/api.md) | using pyModEst as a library |
+| [Troubleshooting](https://github.com/BioJazz-Lab/pyModEst/blob/main/docs/troubleshooting.md) | what goes wrong and what it means |
+| [Examples](https://github.com/BioJazz-Lab/pyModEst/tree/main/docs/examples) | runnable scripts behind the documented output |
+| [Releasing](https://github.com/BioJazz-Lab/pyModEst/blob/main/RELEASING.md) | how a version reaches PyPI |
 
 ## Why fit in modules
 

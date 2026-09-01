@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,13 +8,20 @@ version = "0.1.0"
 description = "Divide-and-conquer, module-wise parameter estimation for biological models written in Antimony"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Song Feng" }]
 keywords = ["systems biology", "parameter estimation", "antimony", "sbml", "roadrunner"]
 classifiers = [
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
   "numpy>=1.22",
@@ -30,6 +37,13 @@ dependencies = [
 dev = [
   "pytest>=7",
 ]
+
+[project.urls]
+Homepage = "https://github.com/BioJazz-Lab/pyModEst"
+Documentation = "https://github.com/BioJazz-Lab/pyModEst/tree/main/docs"
+Repository = "https://github.com/BioJazz-Lab/pyModEst"
+Issues = "https://github.com/BioJazz-Lab/pyModEst/issues"
+Changelog = "https://github.com/BioJazz-Lab/pyModEst/releases"
 
 [project.scripts]
 pymodest = "pymodest.cli:main"
