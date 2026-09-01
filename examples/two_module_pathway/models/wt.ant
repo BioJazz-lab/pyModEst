@@ -1,0 +1,20 @@
+// Wild-type linear pathway with saturating uptake.
+//
+//   S --J1--> A --J2--> B --J3--> C --J4--> (out)
+//
+// Upstream module parameters:   Vmax1, Km1, k2
+// Downstream module parameters: Vmax3, Km3, k4
+
+model wt
+  J1: S -> A;  Vmax1 * S / (Km1 + S);
+  J2: A -> B;  k2 * A;
+  J3: B -> C;  Vmax3 * B / (Km3 + B);
+  J4: C -> ;   k4 * C;
+
+  // initial state (overridden per experiment)
+  S = 10;  A = 0;  B = 0;  C = 0;
+
+  // shared kinetic parameters (fitted)
+  Vmax1 = 1.0;  Km1 = 1.0;  k2 = 1.0;
+  Vmax3 = 1.0;  Km3 = 1.0;  k4 = 1.0;
+end

@@ -1,0 +1,19 @@
+// Same pathway as the wild type, with product inhibition of uptake by C.
+//
+// It shares every kinetic parameter with the wild-type model and adds one of
+// its own, Ki, which therefore can only be identified from feedback-strain
+// data. This is the case pyModEst is built for: several models constrained by
+// one shared parameter set.
+
+model feedback
+  J1: S -> A;  Vmax1 * S / (Km1 + S) * 1 / (1 + C / Ki);
+  J2: A -> B;  k2 * A;
+  J3: B -> C;  Vmax3 * B / (Km3 + B);
+  J4: C -> ;   k4 * C;
+
+  S = 10;  A = 0;  B = 0;  C = 0;
+
+  Vmax1 = 1.0;  Km1 = 1.0;  k2 = 1.0;
+  Vmax3 = 1.0;  Km3 = 1.0;  k4 = 1.0;
+  Ki    = 1.0;
+end

@@ -1,0 +1,157 @@
+# ---------------------------------------------------------------------------
+# pyModEst example: a linear pathway fitted in two modules
+#
+#   S --J1--> A --J2--> B --J3--> C --J4--> (out)
+#
+# Two models share one kinetic parameter set: the wild type, and a strain in
+# which C inhibits uptake. Three experiments measure A, B and C. The parameters
+# are split into an upstream and a downstream module, and each is fitted
+# against only the variables it controls most directly.
+#
+# Run it with:   pymodest fit config.toml
+# ---------------------------------------------------------------------------
+
+[study]
+name = "two-module-pathway"
+output_dir = "results"
+
+# ------------------------------------------------------------------ models --
+
+[[models]]
+id = "wt"
+antimony_file = "models/wt.ant"
+description = "wild-type linear pathway"
+
+[models.observables]
+Total = "A + B + C"
+
+[[models]]
+id = "feedback"
+antimony_file = "models/feedback.ant"
+description = "product inhibition of uptake by C; adds the parameter Ki"
+
+[models.observables]
+Total = "A + B + C"
+
+# ---------------------------------------------------------------- datasets --
+
+[[datasets]]
+id = "wt_high"
+model = "wt"
+file = "data/wt_high.csv"
+format = "wide"
+weight = 1.0
+description = "wild type, saturating substrate"
+[datasets.initial_conditions]
+S = 12.0
+
+[[datasets]]
+id = "wt_low"
+model = "wt"
+file = "data/wt_low.csv"
+format = "wide"
+weight = 1.0
+description = "wild type, sub-saturating substrate -- this is what identifies Km1"
+[datasets.initial_conditions]
+S = 3.0
+
+[[datasets]]
+id = "fb_high"
+model = "feedback"
+file = "data/fb_high.csv"
+format = "wide"
+weight = 1.0
+description = "feedback strain -- the only experiment that constrains Ki"
+[datasets.initial_conditions]
+S = 12.0
+
+# ----------------------------------------------------------------- modules --
+
+# Upstream: substrate uptake and its conversion to B. Scored on A and B, which
+# respond to these parameters long before C has accumulated.
+[[modules]]
+id = "upstream"
+description = "uptake and conversion"
+variables = ["A", "B"]
+
+[[modules.parameters]]
+name = "Vmax1"
+lower = 0.05
+upper = 50.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "Km1"
+lower = 0.05
+upper = 50.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "k2"
+lower = 0.01
+upper = 10.0
+init = 1.0
+scale = "log"
+
+# Downstream: production and removal of C, plus the feedback strength Ki, which
+# only the feedback model has and only the fb_high experiment constrains.
+[[modules]]
+id = "downstream"
+description = "product formation, export and feedback"
+variables = ["C"]
+
+[[modules.parameters]]
+name = "Vmax3"
+lower = 0.05
+upper = 50.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "Km3"
+lower = 0.05
+upper = 50.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "k4"
+lower = 0.01
+upper = 10.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "Ki"
+lower = 0.05
+upper = 50.0
+init = 1.0
+scale = "log"
+
+# ----------------------------------------------------------------- fitting --
+
+[fitting]
+max_loops = 8
+module_order = "as_listed"
+tol = 1e-3
+patience = 2
+seed = 7
+
+[fitting.optimizer]
+name = "differential_evolution"
+maxiter = 40
+popsize = 12
+tol = 1e-8
+polish = true
+
+[fitting.objective]
+scaling = "relative"
+aggregation = "mean"
+epsilon = 1e-3
+
+[fitting.simulation]
+integrator = "cvode"
+relative_tolerance = 1e-8
+absolute_tolerance = 1e-10

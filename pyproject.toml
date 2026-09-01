@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pymodest"
+version = "0.1.0"
+description = "Divide-and-conquer, module-wise parameter estimation for biological models written in Antimony"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Song Feng" }]
+keywords = ["systems biology", "parameter estimation", "antimony", "sbml", "roadrunner"]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "numpy>=1.22",
+  "scipy>=1.9",
+  "pandas>=1.4",
+  "antimony>=2.13",
+  "libroadrunner>=2.4",
+  "tomli>=1.2 ; python_version < '3.11'",
+  "tomli-w>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "matplotlib>=3.5"]
+
+[project.scripts]
+pymodest = "pymodest.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
