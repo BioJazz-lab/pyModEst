@@ -23,6 +23,20 @@ strains, or different experimental conditions, are described by related models.
 
 ---
 
+## Documentation
+
+Full reference in [`docs/`](docs/):
+
+| | |
+| --- | --- |
+| [Concepts](docs/concepts.md) | what module-wise fitting is, when it helps, how it fails |
+| [Configuration](docs/configuration.md) | the complete TOML reference |
+| [Capabilities](docs/capabilities.md) | what the package does, each pinned by a test |
+| [Optimizers](docs/optimizers.md) | the five backends, choosing one, adding one |
+| [Python API](docs/api.md) | using pyModEst as a library |
+| [Troubleshooting](docs/troubleshooting.md) | what goes wrong and what it means |
+| [Examples](docs/examples/) | runnable scripts behind the documented output |
+
 ## Why fit in modules
 
 A joint fit over thirty parameters searches a thirty-dimensional space; a
