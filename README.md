@@ -41,21 +41,44 @@ strictly monotone total, set `accept = "total"`, but read the warning under
 
 ## Installation
 
+The project is managed with [uv](https://docs.astral.sh/uv/). From a clone:
+
 ```bash
-pip install -e .          # from a clone
-pip install -e ".[dev]"   # with pytest and matplotlib
+uv sync                   # create .venv and install from uv.lock, dev group included
 ```
 
-Requires Python 3.9+, and pulls in `antimony`, `libroadrunner`, `numpy`, `scipy`
-and `pandas`.
+`uv sync` installs the exact versions recorded in `uv.lock`, so everyone gets
+the same environment. Commands then run through `uv run`, which keeps the
+environment up to date for you — no manual activation needed:
+
+```bash
+uv run pymodest --version
+uv run pytest
+```
+
+To add or change a dependency, edit `pyproject.toml` and run `uv lock` (or
+`uv add <package>`, which does both), then commit the updated `uv.lock`.
+
+Plain pip works too, if you would rather not use uv:
+
+```bash
+pip install -e .                       # runtime only
+pip install -e . --group dev           # with pytest
+```
+
+Requires Python 3.11+ (the oldest version `libroadrunner` publishes wheels
+for), and pulls in `antimony`, `libroadrunner`, `numpy`, `scipy` and `pandas`.
 
 ## Quick start
 
 ```bash
-pymodest template --out study.toml    # a commented starter configuration
-pymodest validate study.toml          # check models, data and modules agree
-pymodest fit study.toml               # run the estimation
+uv run pymodest template --out study.toml   # a commented starter configuration
+uv run pymodest validate study.toml         # check models, data and modules agree
+uv run pymodest fit study.toml              # run the estimation
 ```
+
+Drop the `uv run` prefix if you have activated the environment yourself
+(`source .venv/bin/activate`) or installed with pip.
 
 Or from Python:
 
@@ -271,8 +294,8 @@ and a downstream module (`Vmax3, Km3, k4, Ki`, scored on C).
 
 ```bash
 cd examples/two_module_pathway
-python generate_data.py       # regenerate the synthetic measurements
-pymodest fit config.toml
+uv run python generate_data.py   # regenerate the synthetic measurements
+uv run pymodest fit config.toml
 ```
 
 The data carry 4% proportional noise. Evaluated at the generating parameters the
@@ -311,9 +334,16 @@ pairs remain correlated at this noise level, as they would in any fit.
 ## Development
 
 ```bash
-pip install -e ".[dev]"
-pytest                        # 116 tests
+uv sync
+uv run pytest                 # 118 tests
 ```
+
+`uv.lock` is committed so results are reproducible. It resolves for every
+platform at once; the pinned `antimony` and `libroadrunner` wheels cover macOS
+(Intel and Apple silicon), Windows, and Linux on x86-64. Linux on arm64 is not
+covered by the current `antimony` release, so on that platform install without
+the lock (`uv pip install -e .`), which falls back to the newest version that
+does publish an arm64 wheel.
 
 Layout:
 

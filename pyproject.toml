@@ -7,7 +7,7 @@ name = "pymodest"
 version = "0.1.0"
 description = "Divide-and-conquer, module-wise parameter estimation for biological models written in Antimony"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Song Feng" }]
 keywords = ["systems biology", "parameter estimation", "antimony", "sbml", "roadrunner"]
@@ -22,12 +22,14 @@ dependencies = [
   "pandas>=1.4",
   "antimony>=2.13",
   "libroadrunner>=2.4",
-  "tomli>=1.2 ; python_version < '3.11'",
-  "tomli-w>=1.0",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=7", "matplotlib>=3.5"]
+# Development tooling (PEP 735). `uv sync` installs this group by default;
+# it is not part of the published package metadata.
+[dependency-groups]
+dev = [
+  "pytest>=7",
+]
 
 [project.scripts]
 pymodest = "pymodest.cli:main"

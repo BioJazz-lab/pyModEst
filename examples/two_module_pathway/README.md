@@ -29,15 +29,15 @@ what the repeated loops are for.
 ## Running it
 
 ```bash
-pymodest validate config.toml     # check everything lines up
-pymodest fit config.toml          # ~7 seconds
+uv run pymodest validate config.toml     # check everything lines up
+uv run pymodest fit config.toml          # ~7 seconds
 ```
 
 Results land in `results/`. To simulate at the parameters that generated the
 data instead:
 
 ```bash
-pymodest simulate config.toml --parameters true_parameters.toml
+uv run pymodest simulate config.toml --parameters true_parameters.toml
 ```
 
 ## What to expect
@@ -55,7 +55,7 @@ check that the estimator has actually converged rather than stopped early.
 ## Regenerating the data
 
 ```bash
-python generate_data.py
+uv run python generate_data.py
 ```
 
 Edit `TRUE`, `EXPERIMENTS` or the noise level at the top of that script to make
