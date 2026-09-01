@@ -63,15 +63,34 @@ Do this once before the first real release.
 
 **Actions → publish → Run workflow → target: `testpypi`**
 
-Then check the upload installs and runs:
+Then check the upload installs and runs. **Take the dependencies from real
+PyPI and only `pymodest` from TestPyPI** — TestPyPI does not mirror PyPI, and
+it carries stale test uploads of common names like `pandas`:
+
+```bash
+uv venv /tmp/pymodest-check
+uv pip install --python /tmp/pymodest-check numpy scipy pandas antimony libroadrunner
+uv pip install --python /tmp/pymodest-check --no-deps \
+    --index https://test.pypi.org/simple/ pymodest
+/tmp/pymodest-check/bin/pymodest --version
+```
+
+Two steps, but no cross-index resolution can go wrong: the dependencies come
+from PyPI, then `--no-deps` installs your artifact alone.
+
+The one-liner version works when TestPyPI happens not to shadow a dependency:
 
 ```bash
 uv run --with pymodest --index https://test.pypi.org/simple/ \
        --index-strategy unsafe-best-match --no-project pymodest --version
 ```
 
-(`--index-strategy unsafe-best-match` lets the dependencies come from real
-PyPI while `pymodest` comes from TestPyPI.)
+Without `--index-strategy unsafe-best-match` this fails with
+`no versions of pandas`: `--index` gives TestPyPI priority, and uv's default
+`first-index` strategy stops at the first index where a name exists rather than
+falling through to PyPI. Note that `unsafe-best-match` is named for a real
+risk — it lets any configured index supply any package — so keep it to one-off
+checks, never a project's default.
 
 ---
 
