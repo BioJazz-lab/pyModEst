@@ -49,73 +49,11 @@ name `testpypi`. TestPyPI is a separate site with its own account.
 
 ### 4. Create the GitHub environments
 
-Two environments are needed, `pypi` and `testpypi`, matching the `environment:`
-blocks in `publish.yml` and the *Environment name* fields registered on PyPI.
-
-**What the environment is doing here.** It holds no secrets — Trusted
-Publishing has none. It does two other jobs:
-
-1. **It narrows the OIDC identity.** When a job declares `environment: pypi`,
-   GitHub adds an `environment` claim to the token it mints. PyPI checks that
-   claim against the publisher you registered, so a workflow that runs
-   *without* the environment cannot publish even if it is otherwise identical.
-2. **It is the gate.** Required reviewers pause the run until a human clicks
-   approve.
-
-#### Creating them
-
-**Settings → Environments → New environment** → name it → *Configure
-environment*. Names are case-insensitive and must be unique in the repo.
-
-Or through the API:
-
-```bash
-gh api --method PUT repos/BioJazz-Lab/pyModEst/environments/testpypi
-
-USER_ID=$(gh api user --jq .id)
-gh api --method PUT repos/BioJazz-Lab/pyModEst/environments/pypi --input - <<JSON
-{"reviewers": [{"type": "User", "id": $USER_ID}]}
-JSON
-```
-
-#### What to configure
-
-| environment | setting | value |
-| --- | --- | --- |
-| `pypi` | Required reviewers | yourself (up to 6 people or teams; one approval releases the job) |
-| `pypi` | Prevent self-review | **off** — a solo maintainer who enables this can never approve their own release |
-| `pypi` | Deployment tag rule | `v*`, so only release tags can deploy to this environment |
-| `testpypi` | — | nothing; it exists only to scope the OIDC claim |
-
-#### The plan restriction
-
-This is the part that decides whether the gate is available at all:
-
-| repository | environments | required reviewers / wait timer |
-| --- | --- | --- |
-| **public** | all plans | **all plans** |
-| private or internal | Pro, Team or Enterprise | Enterprise only |
-
-On a **private** repo on a Free, Pro or Team plan you can create the
-environment — enough for the OIDC claim — but **not** add required reviewers.
-If you want the approval gate without an Enterprise plan, the repository has to
-be public.
-
-#### A trap worth knowing
-
-If `publish.yml` names an environment that does not exist, GitHub **creates it
-silently** on first run, with no protection rules. The workflow succeeds and
-publishes, and nothing warns you that the gate you thought you configured was
-never there. Create the environments before the first release, and confirm they
-are listed under Settings → Environments with the reviewer shown.
-
-#### What a gated release looks like
-
-After you publish a GitHub Release, the `publish` workflow builds and tests,
-then the `pypi` job stops with **Waiting for review**. Reviewers get a
-notification; open the run, click **Review deployments**, tick `pypi`, and
-**Approve and deploy**. Only then does anything reach PyPI. Rejecting it leaves
-the release in place with nothing published — you can fix and re-run.
+In the repo: **Settings → Environments → New environment**, named `pypi` and
+`testpypi`. For `pypi`, add yourself under *Required reviewers* — then every
+release waits for one click before anything reaches PyPI. This is the cheapest
+possible guard against an accidental release, and worth having because **a
+version published to PyPI can never be replaced or reused.**
 
 ---
 
