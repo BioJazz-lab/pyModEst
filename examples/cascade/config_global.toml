@@ -1,0 +1,251 @@
+# ---------------------------------------------------------------------------
+# Six-tier feed-forward cascade, fitted GLOBALLY: every parameter in one
+# module, optimized together in a single joint search. Same model, same data,
+# same objective and optimizer settings as config_modular.toml -- the only
+# difference is the partition: one module of 24 parameters instead of six
+# modules of 2-7.
+#
+# See the README for what to expect: the two are a statistical tie here,
+# unlike ../repressilator where global wins decisively.
+# ---------------------------------------------------------------------------
+
+[study]
+name = "cascade-global"
+output_dir = "results_global"
+
+# ------------------------------------------------------------------ models --
+
+[[models]]
+id = "cascade"
+antimony_file = "models/cascade.ant"
+description = "six-tier feed-forward signaling-to-gene-expression cascade"
+
+# ---------------------------------------------------------------- datasets --
+
+[[datasets]]
+id = "high"
+model = "cascade"
+file = "data/cascade_high.csv"
+format = "wide"
+weight = 1.0
+description = "high stimulus dose (L=2.0)"
+[datasets.conditions]
+L = 2.0
+
+[[datasets]]
+id = "low"
+model = "cascade"
+file = "data/cascade_low.csv"
+format = "wide"
+weight = 1.0
+description = "low stimulus dose (L=0.5)"
+[datasets.conditions]
+L = 0.5
+
+# ----------------------------------------------------------------- modules --
+
+# A single module holding every parameter, scored on every species: this is
+# what makes the fit "global" rather than divide-and-conquer. Bounds, inits
+# and scales match the per-parameter settings in cascade_modular.toml
+# exactly, so the two studies start from the same point in the same space.
+
+[[modules]]
+id = "all"
+description = "every parameter, fitted jointly"
+variables = ["R", "X1", "X2", "M", "P", "M2", "P2"]
+
+[[modules.parameters]]
+name = "k1on"
+lower = 0.25
+upper = 36
+init = 13.5
+scale = "log"
+
+[[modules.parameters]]
+name = "k1off"
+lower = 0.125
+upper = 18
+init = 0.333333
+scale = "log"
+
+[[modules.parameters]]
+name = "k2cat"
+lower = 0.1
+upper = 14.4
+init = 5.4
+scale = "log"
+
+[[modules.parameters]]
+name = "Km2a"
+lower = 0.0125
+upper = 1.8
+init = 0.0333333
+scale = "log"
+
+[[modules.parameters]]
+name = "k2f"
+lower = 0.0833333
+upper = 12
+init = 4.5
+scale = "log"
+
+[[modules.parameters]]
+name = "Km2b"
+lower = 0.0125
+upper = 1.8
+init = 0.0333333
+scale = "log"
+
+[[modules.parameters]]
+name = "k3cat"
+lower = 0.0291667
+upper = 4.2
+init = 1.575
+scale = "log"
+
+[[modules.parameters]]
+name = "Km3a"
+lower = 0.0166667
+upper = 2.4
+init = 0.0444444
+scale = "log"
+
+[[modules.parameters]]
+name = "k3f"
+lower = 0.0233333
+upper = 3.36
+init = 1.26
+scale = "log"
+
+[[modules.parameters]]
+name = "Km3b"
+lower = 0.0166667
+upper = 2.4
+init = 0.0444444
+scale = "log"
+
+[[modules.parameters]]
+name = "a0"
+lower = 0.00416667
+upper = 0.6
+init = 0.225
+scale = "log"
+
+[[modules.parameters]]
+name = "aM"
+lower = 0.0833333
+upper = 12
+init = 0.222222
+scale = "log"
+
+[[modules.parameters]]
+name = "KM"
+lower = 0.0075
+upper = 1.08
+init = 0.405
+scale = "log"
+
+[[modules.parameters]]
+name = "n"
+lower = 1.1
+upper = 5
+init = 1.155
+scale = "log"
+
+[[modules.parameters]]
+name = "dM"
+lower = 0.00666667
+upper = 0.96
+init = 0.36
+scale = "log"
+
+[[modules.parameters]]
+name = "beta"
+lower = 0.05
+upper = 7.2
+init = 0.133333
+scale = "log"
+
+[[modules.parameters]]
+name = "dP"
+lower = 0.00166667
+upper = 0.24
+init = 0.09
+scale = "log"
+
+[[modules.parameters]]
+name = "b0"
+lower = 0.00166667
+upper = 0.24
+init = 0.00444444
+scale = "log"
+
+[[modules.parameters]]
+name = "bM"
+lower = 0.0833333
+upper = 12
+init = 4.5
+scale = "log"
+
+[[modules.parameters]]
+name = "KM2"
+lower = 6.66667
+upper = 960
+init = 17.7778
+scale = "log"
+
+[[modules.parameters]]
+name = "n2"
+lower = 1.1
+upper = 5
+init = 4.75
+scale = "log"
+
+[[modules.parameters]]
+name = "dM2"
+lower = 0.000416667
+upper = 0.06
+init = 0.00111111
+scale = "log"
+
+[[modules.parameters]]
+name = "beta2"
+lower = 0.000833333
+upper = 0.12
+init = 0.045
+scale = "log"
+
+[[modules.parameters]]
+name = "dP2"
+lower = 0.000208333
+upper = 0.03
+init = 0.000555556
+scale = "log"
+
+# ----------------------------------------------------------------- fitting --
+
+[fitting]
+max_loops = 8
+module_order = "as_listed"
+tol = 1e-3
+patience = 2
+seed = 7
+
+[fitting.optimizer]
+name = "differential_evolution"
+maxiter = 60
+popsize = 15
+tol = 1e-8
+polish = true
+
+[fitting.objective]
+# see cascade_modular.toml: max_normalized avoids the near-zero blowup that
+# "relative" scaling causes given this model's wide magnitude spread across
+# species.
+scaling = "max_normalized"
+aggregation = "mean"
+
+[fitting.simulation]
+integrator = "cvode"
+relative_tolerance = 1e-8
+absolute_tolerance = 1e-10

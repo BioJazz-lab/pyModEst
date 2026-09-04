@@ -1,0 +1,26 @@
+# values used to generate the synthetic data in data/
+[parameters]
+k1on = 3.0
+k1off = 1.5
+k2cat = 1.2
+Km2a = 0.15
+k2f = 1.0
+Km2b = 0.15
+k3cat = 0.35
+Km3a = 0.2
+k3f = 0.28
+Km3b = 0.2
+a0 = 0.05
+aM = 1.0
+KM = 0.09
+n = 2.5
+dM = 0.08
+beta = 0.6
+dP = 0.02
+b0 = 0.02
+bM = 1.0
+KM2 = 80.0
+n2 = 2.0
+dM2 = 0.005
+beta2 = 0.01
+dP2 = 0.0025

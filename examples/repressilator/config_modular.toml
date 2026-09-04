@@ -1,0 +1,181 @@
+# ---------------------------------------------------------------------------
+# pyModEst example: a 3-gene ring oscillator (repressilator), fitted in four
+# modules -- one per gene plus a shared "kinetics" module.
+#
+#   gene1 -| gene2 -| gene3 -| gene1     (P_i represses transcription of gene i+1)
+#
+# One Antimony model backs two study entries: the intact "ring" and an "open"
+# variant that overrides K1 to a huge constant, flattening gene 1's Hill term
+# to a near-constant rate and turning the ring into a feed-forward chain that
+# relaxes to a fixed point instead of oscillating. K1 is therefore
+# identifiable only from ring data; everything else is constrained by both.
+#
+# This is a companion to ../two_module_pathway: that example is the case
+# where divide-and-conquer helps (a directional, one-feedback-arrow
+# pathway). This one is the case where it does not -- see config_global.toml
+# and the README for why. Compare the two:
+#
+#   uv run pymodest fit config_modular.toml
+#   uv run pymodest fit config_global.toml
+# ---------------------------------------------------------------------------
+
+[study]
+name = "repressilator-modular"
+output_dir = "results_modular"
+
+# ------------------------------------------------------------------ models --
+
+[[models]]
+id = "ring"
+antimony_file = "models/repressilator.ant"
+description = "intact repressilator ring"
+
+[[models]]
+id = "open"
+antimony_file = "models/repressilator.ant"
+description = "gene 1 unrepressed (K1 fixed huge); breaks the ring, no oscillation"
+[models.overrides]
+K1 = 1e8
+
+# ---------------------------------------------------------------- datasets --
+
+[[datasets]]
+id = "ring"
+model = "ring"
+file = "data/repressilator_ring.csv"
+format = "wide"
+weight = 1.0
+description = "intact ring -- sustained limit-cycle oscillation in all six species"
+
+[[datasets]]
+id = "open"
+model = "open"
+file = "data/repressilator_open.csv"
+format = "wide"
+weight = 1.0
+description = "ring broken at gene 1 -- relaxes to a fixed point; the only experiment that pins down a1 independent of K1"
+
+# ----------------------------------------------------------------- modules --
+
+[[modules]]
+id = "gene1"
+description = "gene 1's own promoter: induced rate and repression threshold"
+variables = ["M1", "P1"]
+
+[[modules.parameters]]
+name = "a1"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K1"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules]]
+id = "gene2"
+description = "gene 2's own promoter: induced rate and repression threshold"
+variables = ["M2", "P2"]
+
+[[modules.parameters]]
+name = "a2"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K2"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules]]
+id = "gene3"
+description = "gene 3's own promoter: induced rate and repression threshold"
+variables = ["M3", "P3"]
+
+[[modules.parameters]]
+name = "a3"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K3"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules]]
+id = "kinetics"
+description = "parameters shared by every gene: leak, cooperativity, degradation, translation"
+variables = ["M1", "P1", "M2", "P2", "M3", "P3"]
+
+[[modules.parameters]]
+name = "a0"
+lower = 0.02
+upper = 5.0
+init = 0.5
+scale = "log"
+
+[[modules.parameters]]
+name = "n"
+lower = 1.2
+upper = 4.0
+init = 2.0
+scale = "log"
+
+[[modules.parameters]]
+name = "dm"
+lower = 0.1
+upper = 5.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "dp"
+lower = 0.02
+upper = 2.0
+init = 0.5
+scale = "log"
+
+[[modules.parameters]]
+name = "beta"
+lower = 0.02
+upper = 3.0
+init = 0.5
+scale = "log"
+
+# ----------------------------------------------------------------- fitting --
+
+[fitting]
+max_loops = 8
+module_order = "as_listed"
+tol = 1e-3
+patience = 2
+seed = 7
+
+[fitting.optimizer]
+name = "differential_evolution"
+maxiter = 60
+popsize = 15
+tol = 1e-8
+polish = true
+
+[fitting.objective]
+scaling = "relative"
+aggregation = "mean"
+epsilon = 1e-2
+
+[fitting.simulation]
+integrator = "cvode"
+relative_tolerance = 1e-8
+absolute_tolerance = 1e-10

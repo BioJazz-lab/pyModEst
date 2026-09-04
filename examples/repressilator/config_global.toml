@@ -1,0 +1,165 @@
+# ---------------------------------------------------------------------------
+# pyModEst example: the same 3-gene ring oscillator as config_modular.toml,
+# fitted GLOBALLY -- every parameter in one module, optimized together in a
+# single joint search. Same models, same data, same objective and optimizer
+# settings; the only difference is the partition: one module of 11
+# parameters instead of four modules of 2-5.
+#
+# See the README: on this model, global fitting reaches the noise floor in
+# 3 loops using about half the function evaluations of the modular fit,
+# which plateaus around 5-6x the noise floor. The reason is the ring's
+# circular coupling -- oscillation phase, period and amplitude are one
+# emergent property of all three genes together, so no module's local fit
+# is a good approximation while the others are still wrong.
+# ---------------------------------------------------------------------------
+
+[study]
+name = "repressilator-global"
+output_dir = "results_global"
+
+# ------------------------------------------------------------------ models --
+
+[[models]]
+id = "ring"
+antimony_file = "models/repressilator.ant"
+description = "intact repressilator ring"
+
+[[models]]
+id = "open"
+antimony_file = "models/repressilator.ant"
+description = "gene 1 unrepressed (K1 fixed huge); breaks the ring, no oscillation"
+[models.overrides]
+K1 = 1e8
+
+# ---------------------------------------------------------------- datasets --
+
+[[datasets]]
+id = "ring"
+model = "ring"
+file = "data/repressilator_ring.csv"
+format = "wide"
+weight = 1.0
+description = "intact ring -- sustained limit-cycle oscillation in all six species"
+
+[[datasets]]
+id = "open"
+model = "open"
+file = "data/repressilator_open.csv"
+format = "wide"
+weight = 1.0
+description = "ring broken at gene 1 -- relaxes to a fixed point"
+
+# ----------------------------------------------------------------- modules --
+
+# A single module holding every parameter, scored on every species: this is
+# what makes the fit "global" rather than divide-and-conquer. Bounds, inits
+# and scales match the per-parameter settings in config_modular.toml
+# exactly, so the two studies start from the same point in the same space.
+
+[[modules]]
+id = "all"
+description = "every parameter, fitted jointly"
+variables = ["M1", "P1", "M2", "P2", "M3", "P3"]
+
+[[modules.parameters]]
+name = "a1"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K1"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "a2"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K2"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "a3"
+lower = 5.0
+upper = 1000.0
+init = 20.0
+scale = "log"
+
+[[modules.parameters]]
+name = "K3"
+lower = 0.1
+upper = 20.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "a0"
+lower = 0.02
+upper = 5.0
+init = 0.5
+scale = "log"
+
+[[modules.parameters]]
+name = "n"
+lower = 1.2
+upper = 4.0
+init = 2.0
+scale = "log"
+
+[[modules.parameters]]
+name = "dm"
+lower = 0.1
+upper = 5.0
+init = 1.0
+scale = "log"
+
+[[modules.parameters]]
+name = "dp"
+lower = 0.02
+upper = 2.0
+init = 0.5
+scale = "log"
+
+[[modules.parameters]]
+name = "beta"
+lower = 0.02
+upper = 3.0
+init = 0.5
+scale = "log"
+
+# ----------------------------------------------------------------- fitting --
+
+[fitting]
+max_loops = 8
+module_order = "as_listed"
+tol = 1e-3
+patience = 2
+seed = 7
+
+[fitting.optimizer]
+name = "differential_evolution"
+maxiter = 60
+popsize = 15
+tol = 1e-8
+polish = true
+
+[fitting.objective]
+scaling = "relative"
+aggregation = "mean"
+epsilon = 1e-2
+
+[fitting.simulation]
+integrator = "cvode"
+relative_tolerance = 1e-8
+absolute_tolerance = 1e-10

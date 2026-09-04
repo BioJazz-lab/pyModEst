@@ -1,0 +1,13 @@
+# values used to generate the synthetic data in data/
+[parameters]
+a0 = 0.22
+n = 2.1
+dm = 0.9
+dp = 0.18
+beta = 0.24
+a1 = 200.0
+K1 = 1.1
+a2 = 240.0
+K2 = 0.85
+a3 = 180.0
+K3 = 1.3

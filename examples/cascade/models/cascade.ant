@@ -1,0 +1,64 @@
+// A six-tier feed-forward signaling-to-gene-expression cascade, built so that
+// each tier's characteristic response time is several-fold slower than the
+// one before it:
+//
+//   L -> R -| (receptor, tau~0.1)
+//         -> X1 -| (kinase relay 1, tau~1, Goldbeter-Koshland switch)
+//               -> X2 -| (kinase relay 2, tau~2)
+//                     -> M -| (mRNA, cooperative activation by X2, tau~10)
+//                          -> P -| (protein, tau~50)
+//                               -> M2 -| (second mRNA, activated by P, tau~150)
+//                                    -> P2 (second protein, tau~500)
+//
+// Every arrow is one-directional -- there is no feedback loop, unlike the
+// repressilator. Coupling is purely hierarchical, and each tier's dynamics
+// are effectively "done" on the timescale where the next tier only starts to
+// move: exactly the textbook justification for a divide-and-conquer,
+// module-by-module fit (each module sees roughly a quasi-steady input from
+// upstream rather than a fast, still-evolving transient).
+//
+// L is a per-dataset stimulus level (a condition, not a fitted parameter).
+//
+// Modules: receptor (k1on, k1off), kinase1 (k2cat, Km2a, k2f, Km2b),
+// kinase2 (k3cat, Km3a, k3f, Km3b), transcription1 (a0, aM, KM, n, dM),
+// protein1 (beta, dP), tier6 (b0, bM, KM2, n2, dM2, beta2, dP2).
+
+model cascade
+  L = 1.0;
+
+  // tier 1: receptor activation
+  JRon:  -> R;  k1on * L * (1 - R);
+  JRoff: R -> ; k1off * R;
+
+  // tier 2: kinase 1 (zero-order ultrasensitive switch)
+  JX1on:  -> X1;  k2cat * R * (1 - X1) / (Km2a + (1 - X1));
+  JX1off: X1 -> ; k2f * X1 / (Km2b + X1);
+
+  // tier 3: kinase 2
+  JX2on:  -> X2;  k3cat * X1 * (1 - X2) / (Km3a + (1 - X2));
+  JX2off: X2 -> ; k3f * X2 / (Km3b + X2);
+
+  // tier 4: mRNA, cooperative activation by X2
+  JMprod: -> M;  a0 + aM * X2^n / (KM^n + X2^n);
+  JMdeg:  M -> ; dM * M;
+
+  // tier 5: protein expression
+  JPprod: -> P;  beta * M;
+  JPdeg:  P -> ; dP * P;
+
+  // tier 6: second, slower gene activated by P
+  JM2prod: -> M2;  b0 + bM * P^n2 / (KM2^n2 + P^n2);
+  JM2deg:  M2 -> ; dM2 * M2;
+  JP2prod: -> P2;  beta2 * M2;
+  JP2deg:  P2 -> ; dP2 * P2;
+
+  R = 0;  X1 = 0;  X2 = 0;  M = 0;  P = 0;  M2 = 0;  P2 = 0;
+
+  k1on = 3.0;   k1off = 1.5;
+  k2cat = 1.2;  Km2a = 0.15;  k2f = 1.0;  Km2b = 0.15;
+  k3cat = 0.35; Km3a = 0.2;   k3f = 0.28; Km3b = 0.2;
+  a0 = 0.05;    aM = 1.0;     KM = 0.09;  n = 2.5;    dM = 0.08;
+  beta = 0.6;   dP = 0.02;
+  b0 = 0.02;    bM = 1.0;     KM2 = 80.0; n2 = 2.0;   dM2 = 0.005;
+  beta2 = 0.01; dP2 = 0.0025;
+end

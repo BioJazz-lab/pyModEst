@@ -1,0 +1,50 @@
+// A three-gene repressilator ring: gene 1 -| gene 2 -| gene 3 -| gene 1.
+//
+// Each gene i produces mRNA M_i, translated into protein P_i; P_i represses
+// the *next* gene around the ring. With cooperative repression (n > 1) and a
+// strong enough induced rate relative to leakage, the ring has no stable fixed
+// point and instead settles onto a limit cycle: sustained, self-generated
+// oscillations in every species, with the three proteins cycling through
+// peaks 120 degrees out of phase. This is the classic Elowitz & Leibler (2000)
+// repressilator, parameterised per-gene rather than symmetrically.
+//
+// The same file backs two entries in the study config: the intact "ring" and
+// an "open" variant that fixes K1 to a huge constant via a model-level
+// override, which flattens gene 1's Hill term to a constant rate and breaks
+// the ring into a feed-forward chain that relaxes to a fixed point instead of
+// oscillating. K1 therefore is identifiable only from ring data -- the open
+// strain constrains everything else.
+//
+// Shared "kinetics" module: a0, n, dm, dp, beta
+// Per-gene modules:         (a1, K1), (a2, K2), (a3, K3)
+
+model repressilator
+  // gene 1, repressed by protein 3
+  Jm1: -> M1;  a0 + a1 / (1 + (P3 / K1)^n);
+  Dm1: M1 -> ; dm * M1;
+  Jp1: -> P1;  beta * M1;
+  Dp1: P1 -> ; dp * P1;
+
+  // gene 2, repressed by protein 1
+  Jm2: -> M2;  a0 + a2 / (1 + (P1 / K2)^n);
+  Dm2: M2 -> ; dm * M2;
+  Jp2: -> P2;  beta * M2;
+  Dp2: P2 -> ; dp * P2;
+
+  // gene 3, repressed by protein 2
+  Jm3: -> M3;  a0 + a3 / (1 + (P2 / K3)^n);
+  Dm3: M3 -> ; dm * M3;
+  Jp3: -> P3;  beta * M3;
+  Dp3: P3 -> ; dp * P3;
+
+  // initial state: every species starts silent
+  M1 = 0;  P1 = 0;  M2 = 0;  P2 = 0;  M3 = 0;  P3 = 0;
+
+  // shared kinetic parameters (fitted; module "kinetics")
+  a0 = 0.22;  n = 2.1;  dm = 0.9;  dp = 0.18;  beta = 0.24;
+
+  // per-gene promoter parameters (fitted; modules "gene1", "gene2", "gene3")
+  a1 = 200;  K1 = 1.1;
+  a2 = 240;  K2 = 0.85;
+  a3 = 180;  K3 = 1.3;
+end
